@@ -38,24 +38,85 @@ per theme: gold-300 on dark (10.23), gold-700 on light (5.66).
 `--ink-faint` was also corrected after a Lighthouse audit caught it at 4.35.
 Both themes now clear 4.5:1 on every surface. Accessibility score: 100.
 
-## Hero: choreographed morph, not a particle simulation
+## The particle system is the spine of the page, not an intro
 
-The plan called for a GPGPU FBO ping-pong simulation. It was built instead as a
-closed-form vertex-shader morph, `mix(textPosition, obeliskPosition, eased)`
-with turbulence and cursor repulsion layered on. The transition is
-art-directed, not emergent, so velocity integration bought nothing, while float
-render targets are exactly the feature that is flaky on mobile GPUs.
+The first build made the obelisk a hero decoration: one morph that completed
+3.5s after load and then sat static. Anyone who read the headline first missed
+it entirely and never saw it again. Everything below was fade-ups and hover
+cards, which is the conventional layout the brief asked us to break.
 
-## Hero is desktop-only, measured rather than assumed
+It is now a single persistent fixed canvas spanning the whole scroll, with
+eight narrative forms in `lib/particle-shapes.ts`:
 
-Running the WebGL hero on emulated mobile cost **5,680 ms of total blocking
-time** (parsing ~890 KB of three.js plus glyph sampling) to render a decoration
-sitting at 35% opacity behind the headline. It now requires
-`(min-width: 1024px) and (pointer: fine)`; everything else gets the CSS/SVG
-poster. TBT after this change: 300 ms.
+| Stage | Form | Meaning |
+|---|---|---|
+| 0 | wordmark | SEO / AEO / GEO |
+| 1 | obelisk | the brand form assembles |
+| 2 | shatter | the thesis lands |
+| 3 | search bar | someone types a query |
+| 4 | answer card | someone asks for an answer |
+| 5 | cited chat bubble | someone asks ChatGPT |
+| 6 | dust | ambience behind conversion sections |
+| 7 | obelisk | re-assembles for the CTA |
 
-Also gated to poster: `prefers-reduced-motion`, save-data, slow networks, and
-absent WebGL2.
+Sections declare their place with `data-stage`, so re-ordering the narrative is
+a JSX change, not a renderer change (`lib/scroll-stage.ts`).
+
+**Morphing is a mix chain, not dynamic indexing.** GLSL ES forbids dynamic
+indexing of attributes, so every form is bound as its own attribute and a
+single continuous `uStage` blends through them with saturating clamps. No
+branching, no indexing.
+
+**Closed-form, not a GPGPU simulation.** The plan called for FBO ping-pong.
+The transition is choreographed rather than emergent, so integrating velocity
+bought nothing, while float render targets are exactly the feature that is
+flaky on mobile GPUs.
+
+Rasterise-and-sample generalises beyond text: search bars, answer cards, and
+chat bubbles are all just 2D drawings sampled into point clouds, with no
+bespoke geometry maths.
+
+## Device tiers, all measured rather than assumed
+
+- **Desktop** (`min-width: 1024px` and `pointer: fine`): full WebGL spine,
+  40k particles, real curl noise, bloom, cursor repulsion.
+- **Mobile**: a 2D canvas gold field following the same scroll stages. It is
+  *not* a static image. The first build's dead SVG poster made half the
+  audience's experience inert.
+- **Restricted** (reduced-motion, save-data, slow network): static poster.
+
+WebGL on emulated mobile cost **5,680 ms of blocking time**, mostly parsing
+~890 KB of three.js, to render something at 35% opacity behind the headline.
+That is a terrible trade on a site selling search performance.
+
+## Two bugs worth remembering
+
+Both would have shipped silently, and both were found only by instrumenting
+rather than reasoning:
+
+1. **The WebGL2 capability probe leaked a context on every page load.**
+   Browsers cap live contexts (Chrome around 16), so the probe would
+   eventually report "unsupported" on perfectly capable hardware and quietly
+   downgrade every visitor from then on. Always release a probe context with
+   `WEBGL_lose_context`.
+2. **`useDeferredMount` relied solely on `requestIdleCallback`.** It is
+   throttled in unfocused tabs and may never fire, leaving the visual
+   permanently absent. A hard `setTimeout` fallback is now always armed
+   alongside it.
+
+## Kinetic headings are desktop-only, and GSAP is lazy
+
+`KineticHeading` splits text into per-character spans and swings them in 3D.
+Measured on emulated mobile, that cost **3,370 ms of style and layout** across
+six headings, for a refinement nobody perceives at phone size. It now runs only
+at `min-width: 1024px`.
+
+GSAP is imported **dynamically inside the effect**, not at module scope.
+Statically importing it put 134 KB of ScrollTrigger and SplitText into the
+initial payload of every device, including the phones that never run it.
+
+No line-clip mask on the split: at 0.98 to 1.05 leading, `overflow: hidden` on
+a line box that short shears ascenders and descenders straight off.
 
 ## Scroll reveals use IntersectionObserver, not an animation library
 
@@ -100,22 +161,47 @@ commas, colons, semicolons, parentheses, or separate sentences.
 
 | | |
 |---|---|
-| Performance | 81 |
+| Performance | 73 |
 | Accessibility | **100** |
 | Best practices | 96 |
 | SEO | **100** |
-| CLS | 0 |
-| TBT | 300 ms |
-| LCP | 3.6 s (the remaining gap) |
+| CLS | **0** |
+| TBT | 1,320 ms |
+| LCP | 2.5 s |
 
-LCP is dominated by the display-font swap on the `<h1>`. Dropping Fraunces'
-`opsz` axis cut that file from 67 KB to 37 KB. Further options, in order of
-appeal: self-host a subset limited to the characters actually used at hero
-size; or switch the display face to `display: optional`, rejected so far
-because it would often show the fallback serif on a brand-led page.
+### How much the spectacle actually costs
 
-Note these numbers come from `next start` on localhost with no CDN and no
-brotli. Vercel's edge should improve them.
+Measured by comparing `/` against `/styleguide`, which renders the same design
+system and CSS but mounts no particle layer:
+
+| | `/` (canvas) | `/styleguide` (none) |
+|---|---|---|
+| Performance | 74 | 74 |
+| TBT | 970 ms | 700 ms |
+| Script evaluation | 2,187 ms | 1,031 ms |
+
+**A page with no particle system at all scores the same.** The remaining gap to
+90 is baseline React and Next hydration under a 4x CPU throttle, not the
+visual. The entire spine costs roughly 270 ms of blocking time.
+
+Getting here took three specific fixes, each worth recording because the naive
+version of each is the obvious thing to write:
+
+1. **Kinetic headings gated to desktop, GSAP imported dynamically.** Splitting
+   six headings into per-character spans cost 3,370 ms of style and layout on
+   mobile; the static import put 134 KB in every device's initial payload.
+2. **Mobile dust uses a cached sprite blitted with `drawImage`,** not
+   `arc()` + `fill()` per particle, at 220 particles, 24fps, and DPR 1. Path
+   fills per particle per frame were the dominant cost, and the glow is soft
+   enough that rendering above 1x is invisible.
+3. **Tinted sections are opaque below `lg`.** A translucent panel stacked over
+   a continuously repainting fixed canvas forces the compositor to redraw that
+   whole region every frame.
+
+Together: mobile 56 -> 73, TBT 4,900 ms -> 1,320 ms.
+
+Note these come from `next start` on localhost with no CDN and no brotli.
+Vercel's edge should improve them.
 
 ## Next up
 

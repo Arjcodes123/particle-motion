@@ -11,9 +11,13 @@ import type { ComponentProps } from "react";
  */
 const tones = {
   clear: "",
-  default: "bg-bg/85",
-  raised: "bg-bg-raised/80",
-  sunken: "bg-bg-sunken/85",
+  // Opaque below lg, translucent above it. A translucent panel stacked over a
+  // continuously repainting fixed canvas forces the compositor to redraw that
+  // whole area every frame, which is precisely the cost phones cannot absorb.
+  // The particle field still shows through the `clear` narrative sections.
+  default: "bg-bg lg:bg-bg/85",
+  raised: "bg-bg-raised lg:bg-bg-raised/80",
+  sunken: "bg-bg-sunken lg:bg-bg-sunken/85",
 } as const;
 
 const spacing = {
