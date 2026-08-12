@@ -5,25 +5,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import {
   OBELISK_WORLD_HEIGHT,
-  generateObeliskPoints,
-  generateRandoms,
-  sampleTextPoints,
-} from "@/lib/obelisk-geometry";
+  buildAllShapes,
+  randomsFor,
+} from "@/lib/particle-shapes";
+import { initScrollStage, scrollStage } from "@/lib/scroll-stage";
 import {
   obeliskFragmentShader,
   obeliskVertexShader,
 } from "./obelisk-shaders";
 
-/** Wordmark that assembles, per strategy brief §3. */
-const WORDS = ["SEO", "AEO", "GEO"];
-
-export function ObeliskScene({ count }: { count: number }) {
+export function ParticleSpine({ count }: { count: number }) {
   const pointsRef = useRef<THREE.Points>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const { size, viewport } = useThree();
 
-  // Sampling rasterises text, so it must wait for the webfont. Otherwise the
-  // point cloud is shaped like the fallback serif.
+  // Shapes are rasterised from text, so the webfont must have landed first or
+  // the wordmark takes the shape of the fallback serif.
   const [fontReady, setFontReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -38,42 +35,43 @@ export function ObeliskScene({ count }: { count: number }) {
     };
   }, []);
 
+  useEffect(() => initScrollStage(), []);
+
   const geometry = useMemo(() => {
     if (!fontReady) return null;
 
-    // next/font already emits a fully-quoted list here, e.g.
-    // `"Fraunces", "Fraunces Fallback"`. Adding our own quotes around it
-    // produces an invalid font string that canvas silently discards.
+    // next/font emits an already-quoted list here, e.g.
+    // `"Fraunces", "Fraunces Fallback"`. Wrapping it in further quotes yields
+    // an invalid font string that canvas silently discards.
     const family = getComputedStyle(document.documentElement)
       .getPropertyValue("--font-fraunces")
       .trim();
 
-    const posA = sampleTextPoints({
-      lines: WORDS,
+    const shapes = buildAllShapes(
       count,
-      fontFamily: family ? `${family}, Georgia, serif` : "Georgia, serif",
-    });
-    const posB = generateObeliskPoints(count);
-    const rand = generateRandoms(count);
+      family ? `${family}, Georgia, serif` : "Georgia, serif",
+    );
 
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(posA, 3));
-    g.setAttribute("aPosB", new THREE.BufferAttribute(posB, 3));
-    g.setAttribute("aRand", new THREE.BufferAttribute(rand, 3));
-    // Points are never frustum-culled incorrectly if we bound generously.
-    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 6);
+    g.setAttribute("position", new THREE.BufferAttribute(shapes[0], 3));
+    for (let i = 1; i < shapes.length; i += 1) {
+      g.setAttribute(`aShape${i}`, new THREE.BufferAttribute(shapes[i], 3));
+    }
+    g.setAttribute("aRand", new THREE.BufferAttribute(randomsFor(count), 3));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 12);
     return g;
   }, [count, fontReady]);
 
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uProgress: { value: 0 },
+      uStage: { value: 0 },
       uSize: { value: 26 },
       uPixelRatio: { value: 1 },
+      uScatter: { value: 0 },
       uPointer: { value: new THREE.Vector3(99, 99, 99) },
       uPointerStrength: { value: 0 },
-      uColorCore: { value: new THREE.Color("#FBF0CE") },
+      uColorCore: { value: new THREE.Color("#FFF6DC") },
       uColorEdge: { value: new THREE.Color("#B8860B") },
       uOpacity: { value: 0 },
     }),
@@ -114,46 +112,72 @@ export function ObeliskScene({ count }: { count: number }) {
     const t = state.clock.elapsedTime;
     if (start.current === null) start.current = t;
     const elapsed = t - start.current;
+    const dt = Math.min(delta, 0.05); // clamp so tab-switches don't jolt
 
     m.uniforms.uTime.value = t;
     m.uniforms.uPixelRatio.value = Math.min(state.gl.getPixelRatio(), 1.5);
+    m.uniforms.uOpacity.value = THREE.MathUtils.clamp(elapsed / 1.1, 0, 1);
 
-    // Fade in from the scene's own first frame. Doing this with a uniform
-    // rather than React state avoids signalling readiness across the R3F
-    // reconciler boundary, and guarantees the particles are actually on screen
-    // before anything is revealed.
-    m.uniforms.uOpacity.value = THREE.MathUtils.clamp(elapsed / 0.9, 0, 1);
-
-    // Hold the wordmark legible for a beat, then morph over ~2.2s.
-    const HOLD = 1.15;
-    const DURATION = 2.2;
-    m.uniforms.uProgress.value = THREE.MathUtils.clamp(
-      (elapsed - HOLD) / DURATION,
-      0,
-      1,
+    // Stage is owned entirely by scroll position. The opening form is stage 0
+    // and the hero occupies it, so the wordmark is what you land on rather
+    // than something that plays out before you have finished reading.
+    m.uniforms.uStage.value = THREE.MathUtils.damp(
+      m.uniforms.uStage.value,
+      scrollStage.target,
+      3.5,
+      dt,
     );
 
-    // Damped follow so repulsion feels weighty rather than glued to the cursor.
-    m.uniforms.uPointer.value.lerp(pointerTarget.current, 1 - Math.pow(0.001, delta));
+    // The intro is an *assembly*, not a stage change: particles begin heavily
+    // displaced by the curl field and converge onto the wordmark as the
+    // scatter term decays. Reusing the turbulence uniform gets the effect for
+    // free, and it cannot be scrolled past before it is seen.
+    const introScatter = Math.max(0, 1 - elapsed / 2.4) * 1.9;
+
+    // Fast scrolling adds turbulence too, so flicking the page feels physical.
+    const scrollScatter = THREE.MathUtils.clamp(scrollStage.velocity / 90, 0, 1);
+
+    m.uniforms.uScatter.value = THREE.MathUtils.damp(
+      m.uniforms.uScatter.value,
+      Math.max(introScatter, scrollScatter),
+      5,
+      dt,
+    );
+    scrollStage.velocity *= 0.86;
+
+    m.uniforms.uPointer.value.lerp(
+      pointerTarget.current,
+      1 - Math.pow(0.0015, dt),
+    );
     m.uniforms.uPointerStrength.value = THREE.MathUtils.damp(
       m.uniforms.uPointerStrength.value,
       pointerActive.current,
       4,
-      delta,
+      dt,
     );
 
-    // Fit to the container rather than to a fixed camera framing: the canvas
-    // is only part of the viewport, and its aspect changes with the
-    // breakpoint, so a constant scale would crop on narrow canvases.
+    // Fit to the container: the canvas aspect changes with the breakpoint, so
+    // a constant scale would crop.
     const fit = (viewport.height * 0.62) / OBELISK_WORLD_HEIGHT;
-
     if (pointsRef.current) {
-      pointsRef.current.rotation.y = Math.sin(t * 0.14) * 0.32;
+      pointsRef.current.rotation.y = Math.sin(t * 0.12) * 0.35;
       pointsRef.current.scale.setScalar(fit);
+
+      // Sit in the empty right-hand column while copy occupies the left
+      // (hero through pillars), then drift to centre once the form becomes an
+      // ambient dust field behind the full-width conversion sections.
+      const wide = size.width >= 1024;
+      const parked = wide ? viewport.width * 0.22 : 0;
+      const centring = THREE.MathUtils.smoothstep(
+        m.uniforms.uStage.value,
+        5.4,
+        6.4,
+      );
+      pointsRef.current.position.x = THREE.MathUtils.lerp(parked, 0, centring);
     }
 
-    // Point size has to track the fit scale too. Scaling positions alone
-    // would leave the sprites at a fixed pixel size and read as chunky grain.
+    // Point size tracks the fit scale, or scaling positions alone would leave
+    // the sprites at a fixed pixel size and read as chunky grain.
     m.uniforms.uSize.value = (size.width < 640 ? 18 : 27) * fit;
   });
 

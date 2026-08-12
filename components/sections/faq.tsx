@@ -14,7 +14,7 @@ import { faqs } from "@/lib/content";
  */
 export function Faq() {
   return (
-    <Section tone="sunken" aria-labelledby="faq-heading">
+    <Section data-stage="6" tone="sunken" aria-labelledby="faq-heading">
       <Container width="wide">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-20">
           <Reveal>

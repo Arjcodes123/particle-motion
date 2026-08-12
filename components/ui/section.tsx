@@ -1,10 +1,19 @@
 import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
 
+/**
+ * Tones are semi-transparent on purpose.
+ *
+ * The particle spine is a fixed canvas *behind* the page, so an opaque section
+ * background would hide it entirely. Narrative sections use `clear` and let
+ * the forms read at full strength; the conversion sections tint enough to keep
+ * copy comfortable while the ambient dust still shows through.
+ */
 const tones = {
-  default: "bg-bg",
-  raised: "bg-bg-raised",
-  sunken: "bg-bg-sunken",
+  clear: "",
+  default: "bg-bg/85",
+  raised: "bg-bg-raised/80",
+  sunken: "bg-bg-sunken/85",
 } as const;
 
 const spacing = {
@@ -13,13 +22,9 @@ const spacing = {
   lg: "py-28 sm:py-36",
 } as const;
 
-/**
- * Vertical rhythm wrapper. Sections are landmarks, so they take an
- * aria-label via `label` when they carry no visible heading.
- */
 export function Section({
   className,
-  tone = "default",
+  tone = "clear",
   size = "md",
   ...props
 }: ComponentProps<"section"> & {

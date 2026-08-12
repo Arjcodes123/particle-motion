@@ -8,7 +8,7 @@ import { services } from "@/lib/content";
 
 export function Services() {
   return (
-    <Section aria-labelledby="services-heading">
+    <Section data-stage="6" tone="default" aria-labelledby="services-heading">
       <Container width="wide">
         <Reveal>
           <Eyebrow>What we write</Eyebrow>

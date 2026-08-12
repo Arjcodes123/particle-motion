@@ -33,7 +33,7 @@ function Check() {
  */
 export function Pricing() {
   return (
-    <Section aria-labelledby="pricing-heading">
+    <Section data-stage="6" tone="default" aria-labelledby="pricing-heading">
       <Container width="wide">
         <Reveal>
           <Eyebrow>Packages</Eyebrow>

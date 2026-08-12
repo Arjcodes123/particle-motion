@@ -6,7 +6,7 @@ import { process } from "@/lib/content";
 
 export function Process() {
   return (
-    <Section tone="sunken" aria-labelledby="process-heading">
+    <Section data-stage="6" tone="sunken" aria-labelledby="process-heading">
       <Container width="wide">
         <Reveal>
           <Eyebrow>How it works</Eyebrow>

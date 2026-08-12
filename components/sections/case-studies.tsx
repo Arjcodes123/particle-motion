@@ -21,7 +21,7 @@ export function CaseStudies() {
   if (!hasData && process.env.NODE_ENV === "production") return null;
 
   return (
-    <Section aria-labelledby="proof-heading">
+    <Section data-stage="6" tone="default" aria-labelledby="proof-heading">
       <Container width="wide">
         <Eyebrow>Proof</Eyebrow>
         <h2

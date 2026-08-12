@@ -3,8 +3,12 @@
 import { useEffect, useState } from "react";
 
 export type HeroCapability =
-  | { mode: "poster"; reason: string }
-  | { mode: "webgl"; count: number };
+  /** Full WebGL particle spine. Desktop only. */
+  | { mode: "webgl"; count: number }
+  /** Lightweight 2D gold field following the same scroll stages. */
+  | { mode: "lite" }
+  /** Static only: reduced-motion, save-data, or no WebGL2. */
+  | { mode: "poster"; reason: string };
 
 interface NavigatorWithHints extends Navigator {
   deviceMemory?: number;
@@ -43,32 +47,37 @@ export function useHeroCapability(): HeroCapability | null {
     }
 
     // Probe for a real WebGL2 context rather than trusting UA sniffing.
+    //
+    // The probe context MUST be released. Browsers cap the number of live
+    // WebGL contexts per page (Chrome around 16), and a probe that leaks one
+    // on every load will eventually exhaust that budget, at which point this
+    // check starts reporting "unsupported" on hardware that supports it
+    // perfectly well and every visitor silently gets the downgraded visual.
     let supported = false;
     try {
       const probe = document.createElement("canvas");
-      supported = Boolean(probe.getContext("webgl2"));
+      const gl = probe.getContext("webgl2");
+      supported = Boolean(gl);
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
     } catch {
       supported = false;
     }
-    if (!supported) {
-      setCapability({ mode: "poster", reason: "no-webgl2" });
-      return;
-    }
 
-    // Desktop-only, deliberately.
+    // WebGL is desktop-only, deliberately.
     //
-    // Measured: running this on emulated mobile cost 5.7s of total blocking
-    // time (parsing ~890KB of three.js plus the glyph-sampling pass) to
-    // render a decoration that sits at 35% opacity behind the headline on
-    // small screens. That is a terrible trade on a site selling search
-    // performance, and the client's own stated concern was low-tier mobile.
-    // Phones and tablets get the poster, which is what they should have had.
+    // Measured: running the particle spine on emulated mobile cost 5.7s of
+    // total blocking time, mostly parsing ~890KB of three.js. That is a
+    // terrible trade on a site selling search performance, and low-tier
+    // mobile was the client's own stated concern.
+    //
+    // Phones do NOT fall through to a static image, though: `lite` renders the
+    // same narrative on a 2D canvas for a fraction of the cost.
     const isDesktop =
       window.matchMedia("(min-width: 1024px)").matches &&
       window.matchMedia("(pointer: fine)").matches;
 
-    if (!isDesktop) {
-      setCapability({ mode: "poster", reason: "small-or-touch-viewport" });
+    if (!supported || !isDesktop) {
+      setCapability({ mode: "lite" });
       return;
     }
 
@@ -99,6 +108,10 @@ export function useDeferredMount(enabled = true): boolean {
     let idleHandle: number | undefined;
     let timeoutHandle: number | undefined;
 
+    const fire = () => {
+      if (!cancelled) setReady(true);
+    };
+
     const schedule = () => {
       if (cancelled) return;
       const ric = (
@@ -110,13 +123,13 @@ export function useDeferredMount(enabled = true): boolean {
         }
       ).requestIdleCallback;
 
-      if (ric) {
-        idleHandle = ric(() => !cancelled && setReady(true), { timeout: 1800 });
-      } else {
-        timeoutHandle = window.setTimeout(() => {
-          if (!cancelled) setReady(true);
-        }, 220);
-      }
+      if (ric) idleHandle = ric(fire, { timeout: 1500 });
+
+      // Always arm a hard fallback as well. requestIdleCallback is throttled
+      // (and its `timeout` not honoured) in backgrounded or unfocused tabs, so
+      // relying on it alone means the visual can silently never appear —
+      // which is exactly what happened during testing.
+      timeoutHandle = window.setTimeout(fire, ric ? 1600 : 220);
     };
 
     if (document.readyState === "complete") {
