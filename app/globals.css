@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/* next-themes writes class="dark" on <html>, so dark: keys off that, not the OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   1. Raw brand ramps
+   The fixed points come from the strategy brief: lapis #1B2A4A, antique gold
+   #B8860B, ivory #F2EFE6. Everything else is a ramp built around them.
+   These are the *paint box*; components never reference them directly.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-lapis-50: #eef2f9;
+  --color-lapis-100: #dae2f0;
+  --color-lapis-200: #b6c5e0;
+  --color-lapis-300: #8ba3cb;
+  --color-lapis-400: #5e7bb0;
+  --color-lapis-500: #3d5a8f;
+  --color-lapis-600: #2c4470;
+  --color-lapis-700: #1b2a4a; /* brief: primary */
+  --color-lapis-800: #16223b;
+  --color-lapis-900: #10192b;
+  --color-lapis-950: #0a101d;
+
+  --color-gold-50: #fbf6e9;
+  --color-gold-100: #f5eac7;
+  --color-gold-200: #ebd48d;
+  --color-gold-300: #dfbb53;
+  --color-gold-400: #d4a32b;
+  --color-gold-500: #b8860b; /* brief: accent. ORNAMENT ONLY, see §2 */
+  --color-gold-600: #9a6f09;
+  --color-gold-700: #7a5807;
+  --color-gold-800: #5c4206;
+  --color-gold-900: #3f2d04;
+
+  --color-ivory: #f2efe6;
+  --color-charcoal: #0e1117;
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Fluid display scale. The serif needs room to breathe at the top end. */
+  --text-display-sm: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+  --text-display-md: clamp(2.25rem, 1.6rem + 3vw, 4rem);
+  --text-display-lg: clamp(2.75rem, 1.7rem + 5vw, 6rem);
+  --text-display-xl: clamp(3.25rem, 1.6rem + 7.5vw, 8rem);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   2. Semantic tokens
+   Components consume ONLY these. Theme switching is one class on <html>.
+
+   Contrast note (verified, WCAG 2.1):
+   The brief's #B8860B scores 2.83 on ivory, a hard FAIL, below even the 3:1
+   large-text floor. It is therefore an ORNAMENT colour only (rules, borders,
+   particles, glyph fills). Gold *text* uses --color-accent-ink, which flips:
+     dark  → gold-300 #DFBB53 on charcoal = 10.23  (AAA)
+     light → gold-700 #7A5807 on ivory    =  5.66  (AA body)
+--------------------------------------------------------------------------- */
+/* `.light` is declared alongside :root so themes can be *nested*. The
+   styleguide renders a true dark specimen inside a light page and vice versa. */
+:root,
+.light {
+  --bg: #f2efe6;
+  --bg-raised: #ffffff;
+  --bg-sunken: #e8e4d7;
+  --ink: #10192b;
+  --ink-muted: #4a5568;
+  /* Verified ≥4.5:1 on all three light grounds: bg 5.04, raised 5.80,
+     sunken 4.56. The obvious-looking #6b7688 fails on bg (3.99). */
+  --ink-faint: #5d6675;
+  --accent: #b8860b;
+  --accent-ink: #7a5807;
+  --accent-contrast: #0e1117;
+  --border: #d9d3c2;
+  --border-strong: #bdb5a0;
+  --shadow-color: 26 32 44;
+}
+
+.dark {
+  --bg: #0e1117;
+  --bg-raised: #16223b;
+  --bg-sunken: #0a101d;
+  --ink: #f2efe6;
+  --ink-muted: #9ba4b4;
+  /* Verified ≥4.5:1 on all three dark grounds: bg 6.01, sunken 6.05,
+     raised 5.04. The original #6f7a8c measured 4.35 and failed AA. */
+  --ink-faint: #8892a2;
+  --accent: #b8860b;
+  --accent-ink: #dfbb53;
+  --accent-contrast: #0e1117;
+  --border: #22304d;
+  --border-strong: #35476b;
+  --shadow-color: 0 0 0;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Base
+--------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Gold focus ring, visible against both grounds. */
+  :focus-visible {
+    outline: 2px solid var(--accent-ink);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: #0e1117;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   4. Motion
+   Every animation in the codebase is gated. This is the global backstop so a
+   missed useReducedMotion() call can never ship a violation.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   5. Scroll reveals
+   Driven by IntersectionObserver toggling data-visible, not by a JS animation
+   library. This keeps ~60KB of runtime off the critical path for what is
+   ultimately an opacity/transform transition.
+
+   Note the default state is VISIBLE. Elements are only hidden once JS has
+   explicitly set data-visible="false" (in a layout effect, so pre-paint).
+   A JS failure, or a crawler with scripting off, therefore sees all content.
+--------------------------------------------------------------------------- */
+[data-reveal][data-visible="false"] {
+  opacity: 0;
+  transform: translate3d(var(--reveal-x, 0), var(--reveal-y, 1.5rem), 0);
+}
+
+[data-reveal] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 700ms var(--ease-out-expo),
+    transform 700ms var(--ease-out-expo);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal][data-visible="true"] {
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal][data-visible="false"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@utility text-gradient-gold {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-gold-600) 0%,
+    var(--color-gold-300) 45%,
+    var(--color-gold-100) 55%,
+    var(--color-gold-400) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility rule-gold {
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent) 50%,
+    transparent
+  );
+}

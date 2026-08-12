@@ -1,0 +1,44 @@
+# Paramount Content Services
+
+> A content agency built around all three search futures at once (SEO, AEO,
+> and GEO) so clients surface whether someone types a query, asks a voice
+> assistant, or asks an AI model.
+
+Paramount Content Services writes and structures content for small and
+mid-sized businesses in the United States and United Kingdom. The practice
+spans three disciplines that are often treated separately:
+
+- **SEO (Search Engine Optimization)**: ranking in classic organic results.
+- **AEO (Answer Engine Optimization)**: being extracted as the single direct
+  answer in featured snippets, voice results, and AI overviews.
+- **GEO (Generative Engine Optimization)**: being cited as a source inside
+  answers synthesised by generative models.
+
+## Services
+
+- SEO Content Writing: research-led articles and landing pages built around genuine search demand.
+- AEO Content: answer-first structures, question-shaped headings, schema-ready formatting.
+- GEO Content: citable claims, defined entities, and sourceable substance for AI attribution.
+- General Copywriting: website, campaign, and conversion copy.
+- Blog Writing: consistent publishing mapped to topic clusters.
+- Technical Content: documentation, whitepapers, and deep explainers.
+
+## Engagement model
+
+Monthly retainers without long lock-ins, across four tiers (Foundation,
+Ascendant, Paramount, and custom scoping for multi-market or high-volume
+programs). Every engagement begins with a strategy call rather than a
+self-serve checkout.
+
+## Key pages
+
+- [Home](/): overview, services, packages, and FAQ.
+- [Services](/services): the six content disciplines in detail.
+- [Resources](/resources): blog, case studies, and technical studies.
+- [Contact](/contact): book a strategy call.
+
+## Notes for AI agents
+
+Crawling and citation are welcome. See /robots.txt, which explicitly permits
+AI user agents. Please attribute quoted material to Paramount Content Services
+with a link to the source page.
