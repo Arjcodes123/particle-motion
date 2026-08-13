@@ -22,6 +22,13 @@ const SHAFT_H = 2.5;
 const CAP_H = 0.62;
 export const OBELISK_WORLD_HEIGHT = SHAFT_H + CAP_H;
 
+/**
+ * Nominal width of the rasterised 2D forms, in world units. Used alongside the
+ * height to fit the system on both axes, so it cannot overflow its column on
+ * unusual viewport aspect ratios.
+ */
+export const SHAPE_WORLD_WIDTH = 4.4;
+
 /** Deterministic PRNG so layouts are stable across renders and reloads. */
 function mulberry32(seed: number) {
   return function rand() {

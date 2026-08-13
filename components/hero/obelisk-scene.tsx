@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import {
   OBELISK_WORLD_HEIGHT,
+  SHAPE_WORLD_WIDTH,
   buildAllShapes,
   randomsFor,
 } from "@/lib/particle-shapes";
@@ -156,9 +157,15 @@ export function ParticleSpine({ count }: { count: number }) {
       dt,
     );
 
-    // Fit to the container: the canvas aspect changes with the breakpoint, so
-    // a constant scale would crop.
-    const fit = (viewport.height * 0.62) / OBELISK_WORLD_HEIGHT;
+    // Fit on BOTH axes, not just height.
+    //
+    // Scaling off viewport height alone meant a tall window produced an
+    // enormous form that spilled out of its column and washed over the body
+    // copy. The width term keeps it inside roughly a third of the viewport so
+    // it stays beside the text at any aspect ratio.
+    const byHeight = (viewport.height * 0.58) / OBELISK_WORLD_HEIGHT;
+    const byWidth = (viewport.width * 0.34) / SHAPE_WORLD_WIDTH;
+    const fit = Math.min(byHeight, byWidth);
     if (pointsRef.current) {
       pointsRef.current.rotation.y = Math.sin(t * 0.12) * 0.35;
       pointsRef.current.scale.setScalar(fit);
