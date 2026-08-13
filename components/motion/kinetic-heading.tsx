@@ -65,17 +65,15 @@ export function KineticHeading({
     let cleanup: (() => void) | undefined;
 
     (async () => {
-      const [gsapMod, stMod, splitMod] = await Promise.all([
+      const [gsapMod, splitMod] = await Promise.all([
         import("gsap"),
-        import("gsap/ScrollTrigger"),
         import("gsap/SplitText"),
       ]);
       if (cancelled || !ref.current) return;
 
       const gsap = gsapMod.default;
-      const { ScrollTrigger } = stMod;
       const { SplitText } = splitMod;
-      gsap.registerPlugin(ScrollTrigger, SplitText);
+      gsap.registerPlugin(SplitText);
 
       // Hidden from JS only, and only now that we know we will animate.
       gsap.set(el, { opacity: 0 });
@@ -86,24 +84,53 @@ export function KineticHeading({
       // descenders straight off.
       const split = new SplitText(el, { type: "chars", aria: "auto" });
 
-      gsap.set(el, { opacity: 1, perspective: 800 });
-      gsap.set(split.chars, { transformOrigin: "50% 100% -30px" });
+      gsap.set(el, { opacity: 1 });
 
-      const tween = gsap.from(split.chars, {
-        yPercent: 55,
-        rotateX: -72,
-        z: -120,
+      // Explicit set-then-to, never gsap.from(), and IntersectionObserver
+      // rather than ScrollTrigger.
+      //
+      // A `from` tween driven by ScrollTrigger re-applies its start state on
+      // every ScrollTrigger.refresh(). Refresh fires on resize, and the page
+      // height shifts constantly while sections animate, so the headline was
+      // being reset mid-reveal over and over and never settled.
+      //
+      // Perspective is also per character, not on the container: with a shared
+      // vanishing point, rotating a glyph drags it sideways toward the centre,
+      // which scatters a wide headline across the page.
+      gsap.set(split.chars, {
+        yPercent: 40,
+        rotateX: -55,
+        transformPerspective: 420,
+        transformOrigin: "50% 100%",
         opacity: 0,
-        duration: 1.05,
-        delay,
-        ease: "expo.out",
-        stagger: { each: 0.022, from: "start" },
-        scrollTrigger: { trigger: el, start: "top 88%", once: true },
       });
 
+      let tween: gsap.core.Tween | undefined;
+      const reveal = () => {
+        tween = gsap.to(split.chars, {
+          yPercent: 0,
+          rotateX: 0,
+          opacity: 1,
+          duration: 0.9,
+          delay,
+          ease: "expo.out",
+          stagger: { each: 0.02, from: "start" },
+        });
+      };
+
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (!entries[0]?.isIntersecting) return;
+          io.disconnect();
+          reveal();
+        },
+        { rootMargin: "0px 0px -10% 0px", threshold: 0.01 },
+      );
+      io.observe(el);
+
       cleanup = () => {
-        tween.scrollTrigger?.kill();
-        tween.kill();
+        io.disconnect();
+        tween?.kill();
         split.revert();
       };
     })();
@@ -126,9 +153,19 @@ export function KineticHeading({
       id={id}
       className={cn("font-display font-semibold text-ink", className)}
     >
+      {/*
+        Solid gold, NOT the text-gradient-gold utility.
+
+        That utility works by painting a gradient on the element and clipping
+        it to the glyphs, which requires the background and the text to live on
+        the same box. SplitText moves every character into its own div, so the
+        characters inherit `color: transparent` while the background stays
+        behind on the emptied wrapper: the word renders completely invisible.
+        A solid accent colour survives being split apart.
+      */}
       {content.map((part, i) =>
         part === gradientWord ? (
-          <span key={i} className="text-gradient-gold">
+          <span key={i} className="text-accent-ink">
             {part}
           </span>
         ) : (

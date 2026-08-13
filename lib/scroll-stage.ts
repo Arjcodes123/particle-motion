@@ -92,9 +92,17 @@ export function initScrollStage(): () => void {
   measure();
   update();
 
+  let debounce: number | undefined;
+
+  // Debounced. Re-measuring reads layout, and the observed element is the body
+  // whose height changes while content animates, so an undebounced handler
+  // turns into a measure/relayout feedback loop.
   const onResize = () => {
-    measure();
-    update();
+    window.clearTimeout(debounce);
+    debounce = window.setTimeout(() => {
+      measure();
+      update();
+    }, 150);
   };
 
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -110,6 +118,7 @@ export function initScrollStage(): () => void {
     window.removeEventListener("scroll", onScroll);
     window.removeEventListener("resize", onResize);
     window.clearTimeout(settle);
+    window.clearTimeout(debounce);
     ro.disconnect();
   };
 }

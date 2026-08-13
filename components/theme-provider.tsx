@@ -16,7 +16,11 @@ export function ThemeProvider({
     <NextThemesProvider
       attribute="class"
       defaultTheme="dark"
-      enableSystem
+      // enableSystem is off deliberately. With it on, the OS preference
+      // overrides defaultTheme, so anyone on a light-mode machine got a light
+      // site. The brief specifies dark as the default look with light
+      // available via the toggle, which means the brand decides, not the OS.
+      enableSystem={false}
       disableTransitionOnChange
       {...props}
     >

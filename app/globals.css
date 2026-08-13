@@ -148,7 +148,43 @@
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.02em;
+    /* Pin Fraunces to a display optical size. Its axis defaults to 14, a text
+       size whose blunt, low-contrast strokes look wrong at heading scale. */
+    font-variation-settings: "opsz" 144;
+  }
+
+  /* NOT text-wrap: balance.
+     SplitText turns every glyph into an inline-block, and balancing a line of
+     hundreds of inline-blocks makes the browser break them at erratic points,
+     which scatters the headline across the page. Balance is opt-in per
+     heading via .text-balance, on headings that are never split. */
+  .text-balance {
     text-wrap: balance;
+  }
+
+  /* Small headings sit closer to a text optical size so they do not turn
+     spindly at 16-20px. */
+  h4, h5, h6 {
+    font-variation-settings: "opsz" 48;
+  }
+
+  /* Optical size has to track rendered size, so it is bound to the type scale
+     rather than set once globally. The display steps get the sharp,
+     high-contrast end of the axis; smaller display text (nav mark, card
+     titles) stays mid-axis so its strokes keep some weight.
+     These follow the h1-h4 rules above so they win at equal specificity. */
+  .font-display {
+    font-variation-settings: "opsz" 40;
+  }
+
+  .text-display-sm {
+    font-variation-settings: "opsz" 96;
+  }
+
+  .text-display-md,
+  .text-display-lg,
+  .text-display-xl {
+    font-variation-settings: "opsz" 144;
   }
 
   p {
