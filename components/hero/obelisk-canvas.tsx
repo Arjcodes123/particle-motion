@@ -1,7 +1,6 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useEffect, useState } from "react";
 import { ParticleSpine } from "./obelisk-scene";
 
@@ -46,22 +45,21 @@ export function ObeliskCanvas({ count }: { count: number }) {
         }}
         onCreated={({ gl }) => gl.setClearAlpha(0)}
       >
-        <ParticleSpine count={count} />
-
         {/*
-          Bloom is what makes the gold read as *emissive* rather than as beige
-          dots. The shader deliberately outputs above 1.0 for particles in
-          flight and under the cursor, and this pass keys off that headroom.
+          No EffectComposer here, deliberately.
+
+          A postprocessing pass renders the scene into its own buffer and
+          writes the result out through a fullscreen pass, which does not
+          preserve the canvas alpha channel. On a transparent canvas layered
+          over the page that produced a completely invisible particle field:
+          the bloom was costing us the entire visual.
+
+          The glow is instead done in the fragment shader with additive
+          blending and a soft radial falloff, which on a dark ground reads as
+          emissive anyway, costs no extra render targets, and keeps the canvas
+          genuinely transparent.
         */}
-        <EffectComposer multisampling={0}>
-          <Bloom
-            intensity={1.35}
-            luminanceThreshold={0.62}
-            luminanceSmoothing={0.28}
-            mipmapBlur
-            radius={0.72}
-          />
-        </EffectComposer>
+        <ParticleSpine count={count} />
       </Canvas>
     </div>
   );

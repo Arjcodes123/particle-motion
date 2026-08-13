@@ -170,9 +170,10 @@ export const obeliskVertexShader = /* glsl */ `
     vDepth = -mvPosition.z;
     vRand  = aRand.z;
 
-    // Particles ignite while in flight and where the cursor disturbs them.
-    // Values exceed 1.0 on purpose: the bloom pass keys off that headroom.
-    vGlow = 0.55 + transit * 1.5 + push * 1.8 + uScatter * 0.8;
+    // Base brightness has to carry a *settled* form on its own. A low resting
+    // value only looked right while something was in flight, so a reader
+    // sitting still on a section saw almost nothing.
+    vGlow = 1.05 + transit * 1.1 + push * 1.6 + uScatter * 0.5;
 
     float size = uSize * (0.55 + aRand.z * 0.9);
     gl_PointSize = size * uPixelRatio * (1.0 / max(vDepth, 0.15));
@@ -203,7 +204,10 @@ export const obeliskFragmentShader = /* glsl */ `
     if (d > 0.5) discard;
 
     float core = smoothstep(0.5, 0.0, d);
-    float halo = pow(core, 3.0);
+    // A gentler exponent than cubic: cubic concentrated nearly all the alpha
+    // in the middle pixel, so the field read as sparse specks rather than a
+    // luminous cloud.
+    float halo = pow(core, 1.9);
 
     // Hotter particles shift toward the pale gold core colour.
     vec3 color = mix(uColorEdge, uColorCore, clamp(halo * vGlow, 0.0, 1.0));

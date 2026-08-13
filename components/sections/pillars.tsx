@@ -28,7 +28,7 @@ export function Pillars() {
           key={p.id}
           data-stage={STAGE_FOR[p.id]}
           aria-labelledby={`pillar-${p.id}`}
-          className="relative flex min-h-[88vh] items-center py-24"
+          className="relative flex min-h-[68vh] items-center py-20 sm:py-24"
         >
           <Container width="wide">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
@@ -62,10 +62,27 @@ export function Pillars() {
                 </Reveal>
               </div>
 
-              {/* Intentionally empty: the particle spine occupies this column
-                  on large screens. Kept in the DOM so the grid reserves the
-                  space and the copy never drifts under the visual. */}
-              <div aria-hidden className="hidden lg:block" />
+              {/*
+                The particle spine renders over this column on large screens,
+                but the column must never *depend* on it. If WebGL is
+                unavailable, throttled, or simply slow to start, an empty half
+                of the viewport reads as a broken page.
+
+                So it carries its own static anchor: an oversized ghosted
+                abbreviation in the display face. Pure DOM, no WebGL, and the
+                particles layer on top of it rather than replacing it.
+              */}
+              <div
+                aria-hidden
+                className="pointer-events-none relative hidden select-none items-center justify-center lg:flex"
+              >
+                <span className="font-display text-[13rem] font-semibold leading-none tracking-tight text-ink opacity-[0.045] xl:text-[17rem]">
+                  {p.abbr}
+                </span>
+                <span
+                  className="absolute inset-x-10 bottom-[38%] h-px rule-gold opacity-30"
+                />
+              </div>
             </div>
           </Container>
         </section>
