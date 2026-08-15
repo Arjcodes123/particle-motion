@@ -16,7 +16,7 @@ export function Thesis() {
       <Container width="wide">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-20">
           <div>
-            <Eyebrow>The shift</Eyebrow>
+            <Eyebrow data-morph>The shift</Eyebrow>
             <KineticHeading
               as="h2"
               id="thesis-heading"

@@ -9,7 +9,7 @@ export function Process() {
     <Section data-stage="6" tone="sunken" aria-labelledby="process-heading">
       <Container width="wide">
         <Reveal>
-          <Eyebrow>How it works</Eyebrow>
+          <Eyebrow data-morph>How it works</Eyebrow>
           <h2
             id="process-heading"
             className="mt-5 max-w-2xl font-display text-display-md font-semibold leading-[1.05] tracking-[-0.025em] text-ink"

@@ -37,7 +37,12 @@ export function Cta() {
             search, answer engines, and AI assistants, and where you should.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <ButtonLink href="/contact" size="lg" variant="primary">
+            <ButtonLink
+              href="/contact"
+              size="lg"
+              variant="primary"
+              data-morph
+            >
               Book a strategy call
             </ButtonLink>
             <ButtonLink href="/services" size="lg" variant="ghost">

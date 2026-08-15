@@ -80,6 +80,7 @@ export function Pillars() {
                   {p.abbr}
                 </span>
                 <span
+                  data-morph
                   className="absolute inset-x-10 bottom-[38%] h-px rule-gold opacity-30"
                 />
               </div>

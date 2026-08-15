@@ -36,7 +36,7 @@ export function Pricing() {
     <Section data-stage="6" tone="default" aria-labelledby="pricing-heading">
       <Container width="wide">
         <Reveal>
-          <Eyebrow>Packages</Eyebrow>
+          <Eyebrow data-morph>Packages</Eyebrow>
           <h2
             id="pricing-heading"
             className="mt-5 max-w-2xl font-display text-display-md font-semibold leading-[1.05] tracking-[-0.025em] text-ink"

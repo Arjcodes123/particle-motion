@@ -18,7 +18,7 @@ export function Faq() {
       <Container width="wide">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-20">
           <Reveal>
-            <Eyebrow>Questions</Eyebrow>
+            <Eyebrow data-morph>Questions</Eyebrow>
             <h2
               id="faq-heading"
               className="mt-5 font-display text-display-md font-semibold leading-[1.05] tracking-[-0.025em] text-ink"

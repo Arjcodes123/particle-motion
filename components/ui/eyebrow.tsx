@@ -9,7 +9,7 @@ export function Eyebrow({ className, children, ...props }: ComponentProps<"p">) 
   return (
     <p
       className={cn(
-        "flex items-center gap-3 font-sans text-xs font-medium uppercase tracking-[0.18em] text-accent-ink",
+        "flex w-fit items-center gap-3 font-sans text-xs font-medium uppercase tracking-[0.18em] text-accent-ink",
         className,
       )}
       {...props}

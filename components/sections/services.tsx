@@ -11,7 +11,7 @@ export function Services() {
     <Section data-stage="6" tone="default" aria-labelledby="services-heading">
       <Container width="wide">
         <Reveal>
-          <Eyebrow>What we write</Eyebrow>
+          <Eyebrow data-morph>What we write</Eyebrow>
           <h2
             id="services-heading"
             className="mt-5 max-w-2xl font-display text-display-md font-semibold leading-[1.05] tracking-[-0.025em] text-ink"

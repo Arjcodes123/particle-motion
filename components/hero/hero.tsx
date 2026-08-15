@@ -18,7 +18,10 @@ export function Hero() {
     >
       <Container width="wide" className="relative z-10 py-28">
         <div className="max-w-2xl">
-          <p className="flex items-center gap-3 font-sans text-xs font-medium uppercase tracking-[0.18em] text-accent-ink">
+          <p
+            data-morph
+            className="flex w-fit items-center gap-3 font-sans text-xs font-medium uppercase tracking-[0.18em] text-accent-ink"
+          >
             <span aria-hidden className="h-px w-6 bg-accent" />
             SEO · AEO · GEO content
           </p>
