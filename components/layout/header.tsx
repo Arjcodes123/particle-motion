@@ -11,6 +11,7 @@ import {
 } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ObeliskGlyph } from "@/components/ui/obelisk-glyph";
 import { cn } from "@/lib/utils";
 import { site } from "@/lib/site";
 
@@ -23,16 +24,6 @@ const nav = [
 /** useLayoutEffect warns during SSR; matches the guard in motion/reveal.tsx. */
 const useIsomorphicLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-/** The brand mark, echoing the hero obelisk. One glyph, reused at every size. */
-function ObeliskGlyph({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 12 24" className={className} fill="currentColor">
-      <path d="M6 0 9 6H3z" />
-      <path d="M3 7h6l-.7 17H3.7z" opacity="0.75" />
-    </svg>
-  );
-}
 
 export function Header() {
   const pathname = usePathname();
