@@ -1,6 +1,6 @@
 import { Hero } from "@/components/hero/hero";
 import { ParticleLayer } from "@/components/hero/particle-layer";
-import { SectionMorph } from "@/components/motion/section-morph";
+import { PositionRail } from "@/components/motion/position-rail";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { Thesis } from "@/components/sections/thesis";
@@ -49,13 +49,7 @@ export default function HomePage() {
 
       <ParticleLayer />
 
-      {/*
-        Sibling of #main, not inside it: #main is `position: relative`, which
-        would rebase this shape's absolute coordinates to main's own box
-        instead of the document root that lib/shape-stage.ts measures
-        against.
-      */}
-      <SectionMorph />
+      <PositionRail />
 
       <Header />
 
